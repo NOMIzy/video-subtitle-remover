@@ -1,3 +1,7 @@
+字幕文件翻译的功能实现在SubtitleTranslation.py中
+
+以下是原项目的readme：
+
 简体中文 | [English](README_en.md)
 
 ## 项目简介

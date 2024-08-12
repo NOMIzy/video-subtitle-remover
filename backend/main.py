@@ -509,7 +509,7 @@ class SubtitleDetect:
 
 
 class SubtitleRemover:
-    def __init__(self, vd_path, sub_area=None, gui_mode=False):
+    def __init__(self, vd_path, sub_area=None, gui_mode=False,add_audio=False):
         importlib.reload(config)
         # 线程锁
         self.lock = threading.RLock()
@@ -559,6 +559,8 @@ class SubtitleRemover:
         self.isFinished = False
         # 预览帧
         self.preview_frame = None
+        # 是否需要嵌入音频
+        self.add_audio = add_audio
         # 是否将原音频嵌入到去除字幕后的视频
         self.is_successful_merged = False
 
@@ -597,7 +599,7 @@ class SubtitleRemover:
     @staticmethod
     def find_frame_no_end(frame_no, continuous_frame_no_list):
         """
-        判断给定的帧号是否为开头，是的话返回结束帧号，不是的话返回-1
+        判断给定的帧号是否为结尾，是的话返回结束帧号，不是的话返回-1
         """
         for start_no, end_no in continuous_frame_no_list:
             if start_no <= frame_no <= end_no:
@@ -714,7 +716,7 @@ class SubtitleRemover:
     def sttn_mode(self, tbar):
         # 是否跳过字幕帧寻找
         if config.STTN_SKIP_DETECTION:
-            # 若跳过则世界使用sttn模式
+            # 若跳过则使用sttn模式
             self.sttn_mode_with_no_detection(tbar)
         else:
             print('use sttn mode')
@@ -847,7 +849,8 @@ class SubtitleRemover:
         self.video_writer.release()
         if not self.is_picture:
             # 将原音频合并到新生成的视频文件中
-            self.merge_audio_to_video()
+            if self.add_audio:
+                self.merge_audio_to_video()
             print(f"[Finished]Subtitle successfully removed, video generated at：{self.video_out_name}")
         else:
             print(f"[Finished]Subtitle successfully removed, picture generated at：{self.video_out_name}")
@@ -862,6 +865,8 @@ class SubtitleRemover:
                     pass
                 else:
                     print(f'failed to delete temp file {self.video_temp_file.name}')
+
+        return self.video_out_name
 
     def merge_audio_to_video(self):
         # 创建音频临时对象，windows下delete=True会有permission denied的报错
@@ -912,7 +917,7 @@ if __name__ == '__main__':
     multiprocessing.set_start_method("spawn")
     # 1. 提示用户输入视频路径
     video_path = input(f"Please input video or image file path: ").strip()
-    # 判断视频路径是不是一个目录，是目录的化，批量处理改目录下的所有视频文件
+    # 判断视频路径是不是一个目录，是目录，批量处理改目录下的所有视频文件
     # 2. 按以下顺序传入字幕区域
     # sub_area = (ymin, ymax, xmin, xmax)
     # 3. 新建字幕提取对象
